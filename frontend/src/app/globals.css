@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 140 65% 45%;
+    --primary-foreground: 0 0% 4%;
+    --sidebar-primary: 140 65% 45%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --chart-1: 140 65% 45%;
+    --chart-2: 260 55% 55%;
+    --chart-3: 85 70% 60%;
+    --chart-4: 25 55% 55%;
+    --chart-5: 320 60% 60%;
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-md: 0.5rem;
+    --radius-sm: 0.25rem;
+    --background: 0 0% 3%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 85%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 140 65% 45%;
+    --sidebar: 0 0% 7%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 140 65% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+      max-width: 1280px;
+    }
+  }
+}
+
+/* Custom Vibey Hub styles */
+.vibey-gradient {
+  background: linear-gradient(135deg, #0A0A0A 0%, #111111 50%, #0a0f0a 100%);
+}
+
+.vibey-glow {
+  box-shadow: 0 0 20px rgba(43, 182, 115, 0.15);
+}
+
+.vibey-glow-sm {
+  box-shadow: 0 0 10px rgba(43, 182, 115, 0.1);
+}
