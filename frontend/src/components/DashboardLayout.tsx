@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import InternAssistant from "./InternAssistant";
 import { useAppAuth } from "@/contexts/AppAuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -202,7 +204,7 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <VibeyMark className="w-8 h-8 text-sm" />
+                  <Image src="/vibey-logo.png" alt="Vibey World" width={32} height={32} className="rounded-lg shrink-0" />
                   <span className="font-semibold tracking-tight truncate text-white text-sm">
                     Vibey Hub
                   </span>
@@ -298,6 +300,7 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset className="flex-1 overflow-auto">
+        {(role === "intern" || role === "team_member") && <InternAssistant />}
         {isMobile && (
           <div className="flex border-b border-[#222] h-14 items-center justify-between bg-[#0A0A0A]/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">

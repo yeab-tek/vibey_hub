@@ -17,7 +17,7 @@ async function getPointsForDifficulty(supabase, difficulty) {
     .eq('difficulty', difficulty)
     .single();
 
-  if (error || !data) {
+  if (error || !data) { 
     throw new Error(`Unknown or missing difficulty setting: ${difficulty}`);
   }
   return data.points;
