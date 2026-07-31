@@ -21,6 +21,17 @@ router.post('/', auth, requireRole('founder', 'team_member'), async (req, res) =
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
+
+  // Notify the assignee that a task has been assigned to them (Section 5.7)
+  if (assigned_user) {
+    await supabase.from('notifications').insert([{
+      user_id: assigned_user,
+      type: 'task_assignment',
+      title: 'New task assigned',
+      message: `You've been assigned: ${title}`,
+    }]);
+  }
+
   res.status(201).json(data);
 });
 

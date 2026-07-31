@@ -3,7 +3,7 @@
 import { useAppAuth } from "@/contexts/AppAuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { FolderKanban, Plus, Circle, ChevronRight } from "lucide-react";
+import { FolderKanban, Plus, Circle, ChevronRight, Link2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,13 @@ export default function Projects() {
     await createProject.mutateAsync({ name: newProject.name, client_name: newProject.client_name, project_type: newProject.project_type, budget: newProject.budget ? Number(newProject.budget) : null, status: newProject.status });
     setShowCreate(false);
     setNewProject({ name: "", client_name: "", project_type: "website", budget: "", status: "lead" });
+  };
+
+  const handleCopyLink = async (e: React.MouseEvent, token: string) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/portal/${token}`;
+    await navigator.clipboard.writeText(url);
+    toast.success("Client link copied");
   };
 
   if (isLoading) {
@@ -162,7 +169,14 @@ export default function Projects() {
                       <h3 className="text-sm font-semibold text-white">{project.name}</h3>
                       <p className="text-xs text-[#666] mt-0.5">{project.client_name}</p>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] ${stageColors[project.status] || stageColors.lead}`}>{project.status}</Badge>
+                    <div className="flex items-center gap-1">
+                  <Badge variant="outline" className={`text-[10px] ${stageColors[project.status] || stageColors.lead}`}>{project.status}</Badge>
+                  {isAdmin && (
+                    <button title="Copy client link" onClick={(e) => handleCopyLink(e, project.share_token)} className="p-1 rounded hover:bg-[#2bb673]/10 transition-colors">
+                      <Link2 className="w-3.5 h-3.5 text-[#666] hover:text-[#2bb673]" />
+                    </button>
+                  )}
+                  </div>
                   </div>
                   <div className="flex items-center gap-1 mb-3">
                     {pipelineStages.map((stage) => (

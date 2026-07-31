@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,7 +73,8 @@ export default function Home() {
         className="text-center max-w-sm w-full relative z-10"
       >
         {/* Title */}
-        <h1 className="text-3xl font-bold text-white mb-2">Vibey Hub</h1>
+        <Image src="/vibey-logo.png" alt="Vibey World" width={64} height={64} className="mx-auto mb-4 rounded-2xl" />
+          <h1 className="text-3xl font-bold text-white mb-2">Vibey Hub</h1>
         <p className="text-[#2bb673] text-sm mb-2">Internal Operating Platform</p>
         <p className="text-[#666] text-sm mb-8">
           Modernizing Lives. Unlocking Potential.
@@ -119,9 +122,10 @@ export default function Home() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password</Label>
-                <Input
+                <div className="relative">
+              <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -130,8 +134,18 @@ export default function Home() {
                   }
                   required
                   minLength={6}
-                />
-              </div>
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-[#999]"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
               {formError && <p className="text-sm text-red-400">{formError}</p>}
 

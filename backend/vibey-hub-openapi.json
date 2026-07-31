@@ -1,0 +1,428 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vibey Hub API",
+    "version": "1.0.0",
+    "description": "Internal contribution tracking + project management API for Vibey World."
+  },
+  "servers": [{ "url": "http://localhost:4000", "description": "Local dev" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "Supabase JWT" }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "role": { "type": "string", "enum": ["founder", "team_member", "intern", "client"] },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "total_points": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "level": { "type": "string" }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "project_id": { "type": "string", "nullable": true },
+          "assigned_user": { "type": "string", "nullable": true },
+          "title": { "type": "string" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+          "status": { "type": "string", "enum": ["todo", "in_progress", "done"] },
+          "points": { "type": "integer", "nullable": true },
+          "deadline": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Contribution": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string" },
+          "title": { "type": "string" },
+          "category": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "points": { "type": "integer" },
+          "evidence_url": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+          "reviewer_note": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "client_name": { "type": "string" },
+          "project_type": { "type": "string", "nullable": true },
+          "budget": { "type": "number", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["lead", "requirement", "design", "development", "testing", "deployment", "completed"]
+          },
+          "start_date": { "type": "string", "nullable": true },
+          "deadline": { "type": "string", "nullable": true },
+          "created_by": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "share_token": { "type": "string" }
+        }
+      },
+      "Milestone": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "project_id": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["not_started", "in_progress", "completed"] },
+          "deadline": { "type": "string", "nullable": true }
+        }
+      },
+      "DifficultySetting": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "difficulty": { "type": "string", "enum": ["easy", "medium", "hard", "exceptional"] },
+          "points": { "type": "integer" }
+        }
+      },
+      "Incentive": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string" },
+          "month": { "type": "string" },
+          "points": { "type": "integer" },
+          "recommended_reward": { "type": "string", "nullable": true },
+          "founder_decision": {
+            "type": "string",
+            "enum": ["approved", "not_this_month", "custom"],
+            "nullable": true
+          },
+          "founder_note": { "type": "string", "nullable": true }
+        }
+      },
+      "ContributionCategory": {
+        "type": "object",
+        "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+      },
+      "AppNotification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string" },
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "message": { "type": "string", "nullable": true },
+          "is_read": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PortalData": {
+        "type": "object",
+        "properties": {
+          "project_name": { "type": "string" },
+          "client_name": { "type": "string" },
+          "status": { "type": "string" },
+          "progress_percent": { "type": "number" },
+          "completed_items": { "type": "array", "items": { "type": "string" } },
+          "next_item": { "type": "string", "nullable": true }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List users",
+        "parameters": [{ "name": "email", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } } }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create profile row (uses Supabase Auth UID as id)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email"],
+                "properties": { "name": { "type": "string" }, "email": { "type": "string" }, "role": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "name": { "type": "string" }, "skills": { "type": "array", "items": { "type": "string" } }, "role": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "parameters": [{ "name": "assigned_user", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } } } } } }
+      },
+      "post": {
+        "tags": ["Tasks"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "assigned_user": { "type": "string" },
+                  "priority": { "type": "string" },
+                  "deadline": { "type": "string" },
+                  "points": { "type": "integer" },
+                  "project_id": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } } }
+      }
+    },
+    "/api/tasks/{id}": {
+      "patch": {
+        "tags": ["Tasks"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "status": { "type": "string" }, "priority": { "type": "string" }, "deadline": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } } }
+      }
+    },
+    "/api/contributions": {
+      "get": {
+        "tags": ["Contributions"],
+        "parameters": [
+          { "name": "user_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Contribution" } } } } } }
+      },
+      "post": {
+        "tags": ["Contributions"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id", "title", "category", "difficulty"],
+                "properties": {
+                  "user_id": { "type": "string" },
+                  "title": { "type": "string" },
+                  "category": { "type": "string" },
+                  "description": { "type": "string" },
+                  "evidence_url": { "type": "string" },
+                  "difficulty": { "type": "string", "enum": ["easy", "medium", "hard", "exceptional"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Contribution" } } } } }
+      }
+    },
+    "/api/contributions/{id}": {
+      "patch": {
+        "tags": ["Contributions"],
+        "summary": "Founder approves/rejects",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": { "status": { "type": "string", "enum": ["approved", "rejected", "pending"] }, "reviewer_note": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Contribution" } } } } }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": ["Projects"],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } } } } } }
+      },
+      "post": {
+        "tags": ["Projects"],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } } }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "tags": ["Projects"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } } }
+      },
+      "patch": {
+        "tags": ["Projects"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } } }
+      }
+    },
+    "/api/projects/{id}/milestones": {
+      "get": {
+        "tags": ["Milestones"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Milestone" } } } } } }
+      },
+      "post": {
+        "tags": ["Milestones"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "deadline": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Milestone" } } } } }
+      }
+    },
+    "/api/milestones/{id}": {
+      "patch": {
+        "tags": ["Milestones"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "status": { "type": "string" }, "deadline": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Milestone" } } } } }
+      }
+    },
+    "/api/difficulty-settings": {
+      "get": {
+        "tags": ["Settings"],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DifficultySetting" } } } } } }
+      }
+    },
+    "/api/difficulty-settings/{id}": {
+      "patch": {
+        "tags": ["Settings"],
+        "summary": "Founder only",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "required": ["points"], "properties": { "points": { "type": "integer" } } } } }
+        },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DifficultySetting" } } } } }
+      }
+    },
+    "/api/incentives": {
+      "get": {
+        "tags": ["Incentives"],
+        "parameters": [
+          { "name": "month", "in": "query", "schema": { "type": "string" } },
+          { "name": "user_id", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Incentive" } } } } } }
+      },
+      "post": {
+        "tags": ["Incentives"],
+        "summary": "Founder only",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Incentive" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Incentive" } } } } }
+      }
+    },
+    "/api/incentives/{id}": {
+      "patch": {
+        "tags": ["Incentives"],
+        "summary": "Founder only",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Incentive" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Incentive" } } } } }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ContributionCategory" } } } } } }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "parameters": [{ "name": "user_id", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AppNotification" } } } } } }
+      }
+    },
+    "/api/notifications/{id}": {
+      "patch": {
+        "tags": ["Notifications"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "is_read": { "type": "boolean" } } } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppNotification" } } } } }
+      }
+    },
+    "/api/notifications/mark-all-read": {
+      "patch": {
+        "tags": ["Notifications"],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["user_id"], "properties": { "user_id": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/portal/{token}": {
+      "get": {
+        "tags": ["Client Portal"],
+        "summary": "Public, no auth — spec 5.5",
+        "security": [],
+        "parameters": [{ "name": "token", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PortalData" } } } } }
+      }
+    }
+  }
+}

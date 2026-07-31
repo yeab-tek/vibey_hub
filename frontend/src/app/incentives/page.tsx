@@ -2,7 +2,7 @@
 
 import { useAppAuth } from "@/contexts/AppAuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, Plus } from "lucide-react";
+import { Award, Plus, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { incentivesApi, usersApi, calculateLevel, type User, type Incentive } from "@/lib/api";
+import { incentivesApi, usersApi, calculateLevel, aiApi, type User, type Incentive, type AiSummary } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Incentives() {
@@ -41,6 +41,8 @@ export default function Incentives() {
   const [showCreate, setShowCreate] = useState(false);
   const [editIncentive, setEditIncentive] = useState<Incentive | null>(null);
   const [newIncentive, setNewIncentive] = useState({ userId: "", month: new Date().toISOString().slice(0, 7), recommendedReward: "", founderDecision: "approved" as "approved" | "not_this_month" | "custom" });
+  const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const incentiveList: Incentive[] = (incentives || []) as Incentive[];
   const memberList: User[] = (members || []) as User[];
@@ -50,6 +52,23 @@ export default function Incentives() {
     await createIncentive.mutateAsync({ user_id: newIncentive.userId, month: newIncentive.month, recommended_reward: newIncentive.recommendedReward || null, founder_decision: newIncentive.founderDecision });
     setShowCreate(false);
     setNewIncentive({ userId: "", month: new Date().toISOString().slice(0, 7), recommendedReward: "", founderDecision: "approved" });
+  };
+
+  const handleGenerateSummary = async () => {
+    if (!newIncentive.userId || !newIncentive.month) return;
+    setAiLoading(true);
+    setAiSummary(null);
+    try {
+      const result = await aiApi.getSummary(newIncentive.userId, newIncentive.month);
+      setAiSummary(result);
+      if (result.incentive_suggestion) {
+        setNewIncentive((prev) => ({ ...prev, founderDecision: result.incentive_suggestion as "approved" | "not_this_month" | "custom" }));
+      }
+    } catch (err) {
+      toast.error("Failed to generate AI summary");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -64,7 +83,7 @@ export default function Incentives() {
           <p className="text-[#888] text-sm mt-1">Monthly reward review and decisions</p>
         </div>
         {isAdmin && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
+          <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) setAiSummary(null); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-[#2bb673] hover:bg-[#25a065] text-[#0A0A0A] font-medium"><Plus className="w-4 h-4 mr-1" /> New Incentive</Button>
             </DialogTrigger>
@@ -84,6 +103,25 @@ export default function Incentives() {
                   <Label className="text-[#888]">Month</Label>
                   <Input type="month" value={newIncentive.month} onChange={(e) => setNewIncentive({ ...newIncentive, month: e.target.value })} className="bg-[#222] border-[#333] text-white" />
                 </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="w-full border-[#333] text-[#888] hover:border-[#2bb673]/50 hover:text-[#2bb673]"
+                  onClick={handleGenerateSummary}
+                  disabled={!newIncentive.userId || !newIncentive.month || aiLoading}
+                >
+                  {aiLoading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
+                  Generate AI Summary
+                </Button>
+                {aiSummary && (
+                  <div className="bg-[#1a1a1a] border border-[#2bb673]/20 rounded-lg p-3 space-y-1">
+                    <p className="text-xs text-[#ccc]">{aiSummary.summary}</p>
+                    <p className="text-[10px] text-[#666]">
+                      {aiSummary.contribution_count} contributions &middot; {aiSummary.month_points} pts this month &middot; {aiSummary.level}
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label className="text-[#888]">Recommended Reward</Label>
                   <Textarea value={newIncentive.recommendedReward} onChange={(e) => setNewIncentive({ ...newIncentive, recommendedReward: e.target.value })} placeholder="e.g. ETB 5,000 bonus" className="bg-[#222] border-[#333] text-white" rows={2} />

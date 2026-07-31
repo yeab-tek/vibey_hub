@@ -30,6 +30,20 @@ router.post('/', auth, async (req, res) => {
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
+
+    // Notify founders that a new contribution needs review (Section 5.7)
+    const { data: founders } = await supabase.from('users').select('id').eq('role', 'founder');
+    if (founders && founders.length > 0) {
+      await supabase.from('notifications').insert(
+        founders.map((f) => ({
+          user_id: f.id,
+          type: 'approval_needed',
+          title: 'New contribution needs review',
+          message: `${title} was submitted and is awaiting approval.`,
+        }))
+    );
+    }
+
     res.status(201).json(data);
   } catch (err) {
     res.status(400).json({ error: err.message });

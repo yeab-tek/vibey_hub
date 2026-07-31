@@ -116,6 +116,7 @@ export interface Project {
   deadline: string | null;
   created_by: string | null;
   created_at: string;
+  share_token: string;
 }
 
 export const projectsApi = {
@@ -230,4 +231,55 @@ export const roleLabels: Record<string, string> = {
   team_member: "Team Member",
   intern: "Intern",
   client: "Client",
+};
+
+// ─── Client Portal (public, no auth) ─────────────────────────────────────────
+
+export interface PortalData {
+  project_name: string;
+  client_name: string;
+  status: Project["status"];
+  progress_percent: number;
+  completed_items: string[];
+  next_item: string | null;
+}
+
+export const portalApi = {
+  get: async (token: string): Promise<PortalData> => {
+    const res = await fetch(`${API_BASE}/api/portal/${token}`);
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+    return res.json() as Promise<PortalData>;
+  },
+};
+
+// ─── AI Assistant ─────────────────────────────────────────────────────────
+
+export interface AiSummary {
+  user_id: string;
+  name: string;
+  month: string;
+  month_points: number;
+  total_points: number;
+  level: string;
+  contribution_count: number;
+  summary: string;
+  incentive_suggestion: "approved" | "not_this_month" | "custom" | null;
+}
+
+export const aiApi = {
+  getSummary: (userId: string, month: string) =>
+    request<AiSummary>(`/api/ai/summary/${userId}?month=${month}`),
+};
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export const aiChatApi = {
+  send: (message: string, history: ChatMessage[]) =>
+    request<{ reply: string }>("/api/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, history }),
+    }),
 };
